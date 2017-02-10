@@ -2,7 +2,8 @@
 
 THIS_DIR=$(cd "$(dirname "$0")" || exit 2; pwd)
 CONFIG=${CONFIG-"$THIS_DIR/conf.sh"}
-PYTHON3=${PYTHON3-"/usr/bin/env python3"}
+LOG_FILE=${LOG_FILE-"$THIS_DIR/log/log.log"}
+PYTHON3=${PYTHON3-"/usr/local/bin/python3"}
 TELETYPER=${TELETYPER-"$THIS_DIR/teletyper.py"}
 
 pgrep -f "$TELETYPER" && exit 0
@@ -11,6 +12,7 @@ pgrep -f "$TELETYPER" && exit 0
 [[ -f "$CONFIG" ]] && . "$CONFIG"
 
 $PYTHON3 "$TELETYPER" \
+    --log-file="$LOG_FILE" \
     --telegram-token="$TELEGRAM_TOKEN" \
     --tumblr-consumer-key="$TUMBLR_CONSUMER_KEY" \
     --tumblr-consumer-secret="$TUMBLR_CONSUMER_SECRET" \
