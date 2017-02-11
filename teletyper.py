@@ -61,7 +61,9 @@ def logger(log_file):
     stream.setFormatter(formatter)
     stream.setLevel(DEBUG)
 
-    bucket = RotatingFileHandler(log_file, maxBytes=(1024 * 64), backupCount=9)
+    bucket = RotatingFileHandler(
+        log_file, maxBytes=(1024 * 1024), backupCount=9
+    )
     bucket.setFormatter(formatter)
     bucket.setLevel(DEBUG)
 
