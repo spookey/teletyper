@@ -46,6 +46,15 @@ You remember that mail server?
 
 You feed me too much, I am sick.
         '''.strip()],
+        bot_error_too_big=['''
+*ERROR* file too big
+
+The api won't deliver..
+        '''.strip(), '''
+*ERROR* file too big
+
+Try two half-length versions instead :)
+        '''.strip()],
         bot_error_video=['''
 *ERROR* video upload failed
 

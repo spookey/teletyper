@@ -6,5 +6,5 @@ TELETYPER=${TELETYPER-"$THIS_DIR/run.py"}
 
 pgrep -f "$TELETYPER" >/dev/null && exit 0
 
-$PYTHON3 "$TELETYPER" --mode bot --level error
+$PYTHON3 "$TELETYPER" --mode bot --lvl error
 exit $?

@@ -42,7 +42,7 @@ class Chat(object):
             'from_user', _up(update.message.from_user),
             'chat', _up(update.message.chat),
             'photo', _up(update.message.photo),
-            'video', _up(update.message.photo),
+            'video', _up(update.message.video),
         ]))
 
     def title(self, dts):
@@ -90,6 +90,8 @@ class Chat(object):
         )
 
     def handle_video(self, bot, update, *, public, **kwargs):
+        if update.message.video.file_size > (1024 * 1024) * 20:
+            return (self.conf.bot_error_too_big, dict())
         source = bot.getFile(update.message.video.file_id).file_path
         if not self.vlog.check_quota(update.message.video.file_size):
             return (self.conf.bot_error_quota, dict())
