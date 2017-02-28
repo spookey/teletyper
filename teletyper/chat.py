@@ -6,8 +6,6 @@ from pytz import utc
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 from tzlocal import get_localzone
 
-from teletyper.lib import APP_NAME
-
 
 class Chat(object):
     def __init__(self, conf, blog, vlog):
@@ -56,10 +54,10 @@ class Chat(object):
         return dts.strftime(self.conf.post_title_fmt)
 
     def trusted(self, update):
-        return (update.message.chat.id in self.conf.telegram_trusted_ids)
+        return update.message.chat.id in self.conf.telegram_trusted_ids
 
     def tags(self, update):
-        res = [APP_NAME]
+        res = [self.conf.app_name]
         if update.message.chat.type == 'group':
             res.append(update.message.chat.title.lower())
         return res
@@ -111,13 +109,14 @@ class Chat(object):
             tags=self.tags(update), title=self.title(update),
         )
         if not post:
-            return self.reply(update, mixer(
+            self.reply(update, mixer(
                 self.conf.bot_err_post, self.conf.bot_err_post_add
             ))
-        return self.reply(update, mixer(self.conf.bot_trg_intro, '', (
-            '>>> {} <<<'.format(post['short_url'])
-            if public else self.conf.bot_trg_wait
-        )))
+        else:
+            self.reply(update, mixer(self.conf.bot_trg_intro, '', (
+                '>>> {} <<<'.format(post['short_url'])
+                if public else self.conf.bot_trg_wait
+            )))
 
     def bot_video(self, bot, update):
         if not update.message.video:
@@ -157,14 +156,14 @@ class Chat(object):
             public=public, tags=tags, title=title,
         )
         if not post:
-            return self.reply(update, mixer(
+            self.reply(update, mixer(
                 self.conf.bot_err_post, self.conf.bot_err_post_add
             ))
-
-        return self.reply(update, mixer(self.conf.bot_trg_intro, '', (
-            '>>> {} <<<'.format(post['short_url'])
-            if public else self.conf.bot_trg_wait
-        )))
+        else:
+            self.reply(update, mixer(self.conf.bot_trg_intro, '', (
+                '>>> {} <<<'.format(post['short_url'])
+                if public else self.conf.bot_trg_wait
+            )), preview=False)
 
     def __call__(self):
         self.setup()

@@ -1,5 +1,6 @@
 from logging import getLogger
 from pprint import pformat
+
 from pytumblr import TumblrRestClient
 
 

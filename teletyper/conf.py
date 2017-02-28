@@ -1,5 +1,6 @@
 from logging import getLogger
 
+from teletyper.lib import APP_NAME
 from teletyper.lib.disk import read_yaml, write_yaml
 
 
@@ -17,7 +18,7 @@ class Conf(object):
         missing = []
         for name, default in source.items():
             value = target.get(name, default)
-            if (not value or value in self.empty):
+            if not value or value in self.empty:
                 missing.append(name)
             target[name] = value
 
@@ -38,8 +39,9 @@ class Conf(object):
         else:
             raise AttributeError
 
-    empty = ([''], [], '')
+    empty = ([], '')
     config_default = dict(
+        app_name=APP_NAME,
         post_title_fmt='%Y_%m_%d-%H_%M_%S',
         telegram_token='',
         telegram_trusted_ids=[],
