@@ -17,8 +17,13 @@ class Vlog(object):
 
     @property
     def info(self):
-        res = self.client.get('/me')
-        return res.json() if res.status_code == 200 else {}
+        self.log.debug('request vlog info')
+        req = self.client.get('/me')
+        res = req.json()
+        if req.status_code != 200:
+            self.log.warning('vlog info error response "%s"', res)
+            return {}
+        return res
 
     def check_quota(self, size):
         return self.info['upload_quota']['space']['free'] > size

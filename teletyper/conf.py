@@ -4,39 +4,55 @@ from teletyper.lib.disk import read_yaml, write_yaml
 
 
 class Conf(object):
-    def __init__(self, location):
+    def __init__(self, config_file, speech_file):
         self.log = getLogger(__name__)
-        self.location = location
-        self._content = read_yaml(self.location, fallback={})
+        self.config_file = config_file
+        self._config_data = read_yaml(self.config_file, fallback={})
+        self.speech_file = speech_file
+        self._speech_data = read_yaml(self.speech_file, fallback={})
         self.check()
         self.log.debug('%s init done', __name__)
 
-    def save(self):
-        self.log.info('saving config to file "%s"', self.location)
-        return write_yaml(self.location, content=self._content)
-
-    def check(self):
+    def handle(self, target, source, location):
         missing = []
-        for name, default in self.default.items():
-            value = self._content.get(name, default)
-            if not (value or self._content[name] in self.empty):
+        for name, default in source.items():
+            value = target.get(name, default)
+            if not value or value == default:
                 missing.append(name)
-            self._content[name] = value
+            target[name] = value
 
         if missing:
-            self.log.error('values missing: "%s"', '", "'.join(missing))
+            self.log.error('values missing "%s"', '", "'.join(missing))
+        self.log.info('saving conf to file "%s"', location)
+        write_yaml(location, content=target)
 
-        self.save()
-        return not missing
+    def check(self):
+        self.handle(self._config_data, self.config_default, self.config_file)
+        self.handle(self._speech_data, self.speech_default, self.speech_file)
 
     def __getattr__(self, name):
-        if name in self._content.keys():
-            return self._content[name]
+        if name in self._config_data.keys():
+            return self._config_data[name]
+        elif name in self._speech_data.keys():
+            return self._speech_data[name]
         else:
             raise AttributeError
 
     empty = ([''], [], '')
-    default = dict(
+    config_default = dict(
+        post_title_fmt='%Y-%m-%d %H:%M:%S',
+        telegram_token='',
+        telegram_trusted_ids=[],
+        tumblr_blog_name='',
+        tumblr_consumer_key='',
+        tumblr_consumer_secret='',
+        tumblr_oauth_secret='',
+        tumblr_oauth_token='',
+        vimeo_client_id='',
+        vimeo_client_secret='',
+        vimeo_token='',
+    )
+    speech_default = dict(
         bot_error_quota=['''
 *ERROR* no quota left
 
@@ -123,15 +139,4 @@ Success!
 Great!
 >> just wait till it gets published <<
         '''.strip()],
-        post_title_fmt='%Y-%m-%d %H:%M:%S',
-        telegram_token='',
-        telegram_trusted_ids=[],
-        tumblr_blog_name='',
-        tumblr_consumer_key='',
-        tumblr_consumer_secret='',
-        tumblr_oauth_secret='',
-        tumblr_oauth_token='',
-        vimeo_client_id='',
-        vimeo_client_secret='',
-        vimeo_token='',
     )

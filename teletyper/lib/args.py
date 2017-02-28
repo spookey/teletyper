@@ -23,8 +23,12 @@ def check_args(args):
 def arguments():
     parser = ArgumentParser(APP_NAME)
     parser.add_argument(
-        '-c', '--conf', dest='config_file', help='config file location',
+        '-c', '--config', dest='config_file', help='config file location',
         default=base_location('config.yaml')
+    )
+    parser.add_argument(
+        '-s', '--speech', dest='speech_file', help='speech file location',
+        default=base_location('speech.yaml')
     )
     parser.add_argument(
         '-l', '--log', dest='log_folder', help='folder location for log files',

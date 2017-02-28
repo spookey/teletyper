@@ -19,7 +19,7 @@ class Blog(object):
 
     @property
     def info(self):
-        if not self.__info:
+        if self.__info is None:
             self.log.debug(
                 'request blog info for "%s"', self.conf.tumblr_blog_name
             )
