@@ -23,9 +23,12 @@ class Chat(object):
         for handler in [
                 CommandHandler('start', self.bot_start),
                 CommandHandler('help', self.bot_help),
-                MessageHandler((
-                    Filters.photo | Filters.video | Filters.forwarded
-                ), self.bot_trigger)
+                MessageHandler(
+                    Filters.photo | Filters.forwarded, self.bot_photo
+                ),
+                MessageHandler(
+                    Filters.video | Filters.forwarded, self.bot_video
+                ),
         ]:
             self.updater.dispatcher.add_handler(handler)
         self.updater.dispatcher.add_error_handler(self.bot_error)
@@ -33,6 +36,8 @@ class Chat(object):
 
     def log_update(self, update, text):
         def _up(data):
+            if not data:
+                return '-'
             return pformat(getattr(data, '__dict__', data))
 
         self.log.info('\n    '.join([
@@ -89,10 +94,14 @@ class Chat(object):
                 '', '>>> {} <<<'.format(self.blog.info['url']),
                 '', self.blog.info['description'],
                 blog_name=self.blog.info['name'],
-            )
+            ), preview=True
         )
 
-    def handle_photo(self, bot, update):
+    def bot_photo(self, bot, update):
+        if not update.message.photo:
+            return
+        self.log_update(update, 'photo')
+
         public = self.trusted(update)
         source = bot.getFile(sorted(
             update.message.photo, key=lambda ph: ph.width * ph.height
@@ -102,62 +111,60 @@ class Chat(object):
             tags=self.tags(update), title=self.title(update),
         )
         if not post:
-            return mixer(self.conf.bot_err_post, self.conf.bot_err_post_add)
-
-        return mixer(self.conf.bot_trg_intro, '', (
+            return self.reply(update, mixer(
+                self.conf.bot_err_post, self.conf.bot_err_post_add
+            ))
+        return self.reply(update, mixer(self.conf.bot_trg_intro, '', (
             '>>> {} <<<'.format(post['short_url'])
             if public else self.conf.bot_trg_wait
-        ))
+        )))
 
-    def handle_video(self, bot, update):
+    def bot_video(self, bot, update):
+        if not update.message.video:
+            return
+        self.log_update(update, 'video')
+
         public = self.trusted(update)
         tags = self.tags(update)
         title = self.title(update)
 
         if update.message.video.file_size > (1024 * 1024) * 20:
-            return mixer(self.conf.bot_err_large, self.conf.bot_err_large_add)
+            return self.reply(update, mixer(
+                self.conf.bot_err_large, self.conf.bot_err_large_add
+            ))
         if not self.vlog.quota(update.message.video.file_size):
-            return mixer(self.conf.bot_err_quota, self.conf.bot_err_quota_add)
-
+            return self.reply(update, mixer(
+                self.conf.bot_err_quota, self.conf.bot_err_quota_add
+            ))
         source = bot.getFile(update.message.video.file_id).file_path
         upload = self.vlog.upload(source)
         if not upload:
-            return mixer(
+            return self.reply(update, mixer(
                 self.conf.bot_err_upload, self.conf.bot_err_upload_add
-            )
+            ))
 
         video = self.vlog.change(
             upload, caption=update.message.caption,
             public=public, tags=tags, title=title,
         )
         if not video:
-            return mixer(
+            return self.reply(update, mixer(
                 self.conf.bot_err_change, self.conf.bot_err_change_add
-            )
+            ))
 
         post = self.blog.post_video(
             video['embed']['html'], caption=update.message.caption,
             public=public, tags=tags, title=title,
         )
         if not post:
-            return mixer(self.conf.bot_err_post, self.conf.bot_err_post_add)
+            return self.reply(update, mixer(
+                self.conf.bot_err_post, self.conf.bot_err_post_add
+            ))
 
-        return mixer(self.conf.bot_trg_intro, '', (
+        return self.reply(update, mixer(self.conf.bot_trg_intro, '', (
             '>>> {} <<<'.format(post['short_url'])
             if public else self.conf.bot_trg_wait
-        ))
-
-    def bot_trigger(self, bot, update):
-        self.log_update(update, 'trigger')
-
-        if update.message.photo:
-            self.reply(update, self.handle_photo(
-                bot, update
-            ), preview=True)
-        elif update.message.video:
-            self.reply(update, self.handle_video(
-                bot, update
-            ), preview=False)
+        )))
 
     def __call__(self):
         self.setup()

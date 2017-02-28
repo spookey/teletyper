@@ -17,7 +17,7 @@ class Conf(object):
         missing = []
         for name, default in source.items():
             value = target.get(name, default)
-            if not value or value == default:
+            if (not value or value in self.empty):
                 missing.append(name)
             target[name] = value
 

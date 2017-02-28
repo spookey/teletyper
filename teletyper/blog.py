@@ -1,5 +1,5 @@
 from logging import getLogger
-
+from pprint import pformat
 from pytumblr import TumblrRestClient
 
 
@@ -29,6 +29,12 @@ class Blog(object):
             ][-1]
         return self.__info
 
+    def log_post(self, post, text):
+        self.log.info('\n    '.join([
+            'tumblr post ->', text, '\n',
+            pformat(post.get('posts')),
+        ]))
+
     def post_photo(self, source, *, title, caption, public, tags=[]):
         post = self.client.create_photo(
             self.info['name'],
@@ -39,7 +45,10 @@ class Blog(object):
             state=('published' if public else 'draft'),
             tags=tags
         )
-        return self.client.posts(self.info['name'], id=post['id'])['posts'][0]
+        self.log_post(post, 'photo')
+        return self.client.posts(
+            self.info['name'], id=post['id']
+        ).get('posts', [None])[0]
 
     def post_video(self, embed, *, title, caption, public, tags=[]):
         post = self.client.create_video(
@@ -51,4 +60,7 @@ class Blog(object):
             state=('published' if public else 'draft'),
             tags=tags
         )
-        return self.client.posts(self.info['name'], id=post['id'])['posts'][0]
+        self.log_post(post, 'video')
+        return self.client.posts(
+            self.info['name'], id=post['id']
+        ).get('posts', [None])[0]
