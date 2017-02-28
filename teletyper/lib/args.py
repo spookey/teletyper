@@ -13,10 +13,10 @@ LOG = getLogger(__name__)
 
 def check_args(args):
     args.config_file = ensured_parent_folder(args.config_file)
+    args.speech_file = ensured_parent_folder(args.speech_file)
     args.log_folder = ensured_folder(args.log_folder)
     args.log_level = args.log_level.lower()
     args.mode = args.mode.lower()
-    print(args)
     return args
 
 
