@@ -25,10 +25,10 @@ class Vlog(object):
             return {}
         return res
 
-    def check_quota(self, size):
+    def quota(self, size):
         return self.info['upload_quota']['space']['free'] > size
 
-    def post_video(self, source, *, title, caption, public, tags=[]):
+    def upload(self, source):
         res = self.client.post('/me/videos', data=dict(
             type='pull', link=source
         ))
@@ -36,7 +36,9 @@ class Vlog(object):
         if res.status_code != 200:
             self.log.error('video upload error "%s"', video)
             return
+        return video
 
+    def change(self, video, *, title, caption, public, tags=[]):
         res = self.client.patch(video['uri'], data=dict(
             name=title,
             description=caption,
@@ -53,5 +55,4 @@ class Vlog(object):
         if res.status_code not in [200, 201]:
             self.log.error('video tag error "%s"', res.json())
             return
-
-        return video['embed']['html']
+        return video

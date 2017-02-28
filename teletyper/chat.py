@@ -45,16 +45,25 @@ class Chat(object):
             'video', _up(update.message.video),
         ]))
 
-    def title(self, dts):
-        dts = dts.replace(tzinfo=utc).astimezone(get_localzone())
+    def title(self, update):
+        ltz = get_localzone()
+        dts = update.message.date.replace(tzinfo=utc).astimezone(ltz)
         return dts.strftime(self.conf.post_title_fmt)
 
-    def reply(self, update, choices, _preview=True, **formats):
-        message = choice(choices).format(**formats)
-        self.log.debug('send reply "%s"', message)
+    def trusted(self, update):
+        return (update.message.chat.id in self.conf.telegram_trusted_ids)
+
+    def tags(self, update):
+        res = [APP_NAME]
+        if update.message.chat.type == 'group':
+            res.append(update.message.chat.title.lower())
+        return res
+
+    def reply(self, update, text, preview=True):
+        self.log.debug('send reply "%s"', text)
         update.message.reply_text(
-            message, parse_mode='markdown',
-            disable_web_page_preview=(not _preview)
+            text, parse_mode='markdown',
+            disable_web_page_preview=(not preview)
         )
 
     def bot_error(self, _, update, error):
@@ -64,70 +73,91 @@ class Chat(object):
     def bot_start(self, _, update):
         self.log_update(update, '/start')
         self.reply(
-            update, self.conf.bot_start, _preview=False,
-            blog_url=self.blog.info['url']
+            update, mixer(
+                self.conf.bot_cmd_start,
+                self.conf.bot_cmd_start_add,
+                '', '>>> {} <<<'.format(self.blog.info['url'])
+            ), preview=False,
         )
 
     def bot_help(self, _, update):
         self.log_update(update, '/help')
         self.reply(
-            update, self.conf.bot_help,
-            blog_url=self.blog.info['url'],
-            blog_description=self.blog.info['description'],
-            blog_name=self.blog.info['name'],
+            update, mixer(
+                self.conf.bot_cmd_help,
+                self.conf.bot_cmd_help_add,
+                '', '>>> {} <<<'.format(self.blog.info['url']),
+                '', self.blog.info['description'],
+                blog_name=self.blog.info['name'],
+            )
         )
 
-    def handle_photo(self, bot, update, *, public, **kwargs):
+    def handle_photo(self, bot, update):
+        public = self.trusted(update)
         source = bot.getFile(sorted(
             update.message.photo, key=lambda ph: ph.width * ph.height
         )[-1].file_id).file_path
-        photo = self.blog.post_photo(
-            source, caption=update.message.caption, public=public, **kwargs
+        post = self.blog.post_photo(
+            source, caption=update.message.caption, public=public,
+            tags=self.tags(update), title=self.title(update),
         )
-        return (
-            self.conf.bot_photo_public if public else self.conf.bot_photo_wait,
-            photo
-        )
+        if not post:
+            return mixer(self.conf.bot_err_post, self.conf.bot_err_post_add)
 
-    def handle_video(self, bot, update, *, public, **kwargs):
+        return mixer(self.conf.bot_trg_intro, '', (
+            '>>> {} <<<'.format(post['short_url'])
+            if public else self.conf.bot_trg_wait
+        ))
+
+    def handle_video(self, bot, update):
+        public = self.trusted(update)
+        tags = self.tags(update)
+        title = self.title(update)
+
         if update.message.video.file_size > (1024 * 1024) * 20:
-            return (self.conf.bot_error_too_big, dict())
+            return mixer(self.conf.bot_err_large, self.conf.bot_err_large_add)
+        if not self.vlog.quota(update.message.video.file_size):
+            return mixer(self.conf.bot_err_quota, self.conf.bot_err_quota_add)
+
         source = bot.getFile(update.message.video.file_id).file_path
-        if not self.vlog.check_quota(update.message.video.file_size):
-            return (self.conf.bot_error_quota, dict())
-        embed = self.vlog.post_video(
-            source, caption=update.message.caption, public=public, **kwargs
+        upload = self.vlog.upload(source)
+        if not upload:
+            return mixer(
+                self.conf.bot_err_upload, self.conf.bot_err_upload_add
+            )
+
+        video = self.vlog.change(
+            upload, caption=update.message.caption,
+            public=public, tags=tags, title=title,
         )
-        if not embed:
-            return (self.conf.bot_error_video, dict())
-        video = self.blog.post_video(
-            embed, caption=update.message.caption, public=public, **kwargs
+        if not video:
+            return mixer(
+                self.conf.bot_err_change, self.conf.bot_err_change_add
+            )
+
+        post = self.blog.post_video(
+            video['embed']['html'], caption=update.message.caption,
+            public=public, tags=tags, title=title,
         )
-        return (
-            self.conf.bot_video_public if public else self.conf.bot_video_wait,
-            video
-        )
+        if not post:
+            return mixer(self.conf.bot_err_post, self.conf.bot_err_post_add)
+
+        return mixer(self.conf.bot_trg_intro, '', (
+            '>>> {} <<<'.format(post['short_url'])
+            if public else self.conf.bot_trg_wait
+        ))
 
     def bot_trigger(self, bot, update):
         self.log_update(update, 'trigger')
 
-        tags = [APP_NAME]
-        if update.message.chat.type == 'group':
-            tags.append(update.message.chat.title.lower())
-        title = self.title(update.message.date)
-        public = (update.message.chat.id in self.conf.telegram_trusted_ids)
-
         if update.message.photo:
-            message, post = self.handle_photo(
-                bot, update, public=public, tags=tags, title=title
-            )
+            self.reply(update, self.handle_photo(
+                bot, update
+            ), preview=True)
         elif update.message.video:
-            message, post = self.handle_video(
-                bot, update, public=public, tags=tags, title=title
-            )
-        else:
-            return
-        self.reply(update, message, **post)
+            self.reply(update, self.handle_video(
+                bot, update
+            ), preview=False)
 
     def __call__(self):
         self.setup()
@@ -136,3 +166,9 @@ class Chat(object):
         self.updater.stop()
         self.log.info('good bye!')
         return True
+
+
+def mixer(*elems, **kwargs):
+    return '\n'.join([(
+        choice(elem) if isinstance(elem, (list, tuple)) else elem
+    ) for elem in elems]).format(**kwargs)

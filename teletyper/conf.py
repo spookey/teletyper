@@ -22,7 +22,7 @@ class Conf(object):
             target[name] = value
 
         if missing:
-            self.log.error('values missing "%s"', '", "'.join(missing))
+            self.log.warning('values missing "%s"', '", "'.join(missing))
         self.log.info('saving conf to file "%s"', location)
         write_yaml(location, content=target)
 
@@ -40,7 +40,7 @@ class Conf(object):
 
     empty = ([''], [], '')
     config_default = dict(
-        post_title_fmt='%Y-%m-%d %H:%M:%S',
+        post_title_fmt='%Y_%m_%d-%H_%M_%S',
         telegram_token='',
         telegram_trusted_ids=[],
         tumblr_blog_name='',
@@ -53,90 +53,60 @@ class Conf(object):
         vimeo_token='',
     )
     speech_default = dict(
-        bot_error_quota=['''
-*ERROR* no quota left
-
-You remember that mail server?
-        '''.strip(), '''
-*ERROR* no quota left
-
-You feed me too much, I am sick.
-        '''.strip()],
-        bot_error_too_big=['''
-*ERROR* file too big
-
-The api won't deliver..
-        '''.strip(), '''
-*ERROR* file too big
-
-Try two half-length versions instead :)
-        '''.strip()],
-        bot_error_video=['''
-*ERROR* video upload failed
-
-I am so sorry.
-        '''.strip(), '''
-*ERROR* video upload failed
-
-I feel miserable.
-        '''.strip()],
-        bot_help=['''
-No, you help me!
-
-*Send pictures and videos for {blog_name}*
->> {blog_url} <<
-
-{blog_description}
-        '''.strip(), '''
-Yes, this is Dog?!
-
-*{blog_name} needs your pictures and videos*
->> {blog_url} <<
-
-{blog_description}
-        '''.strip()],
-
-        bot_photo_public=['''
-I see what you did there!
->> {short_url} <<
-        '''.strip(), '''
-Very nice!
->> {short_url} <<
-        '''.strip()],
-
-        bot_photo_wait=['''
-Ok!
->> will be published soon <<
-        '''.strip(), '''
-Nice!
->> just wait till it gets published <<
-        '''.strip()],
-
-        bot_start=['''
-*Welcome!*
-
-See some crazy stuff here:
->> {blog_url} <<
-        '''.strip(), '''
-*Well hello there!*
-
-Get fresh updates from here:
->> {blog_url} <<
-        '''.strip()],
-
-        bot_video_public=['''
-Well done!
->> {short_url} <<
-        '''.strip(), '''
-Moving pictures!
->> {short_url} <<
-        '''.strip()],
-
-        bot_video_wait=['''
-Success!
->> will be published soon <<
-        '''.strip(), '''
-Great!
->> just wait till it gets published <<
-        '''.strip()],
+        bot_cmd_help=[
+            'No, you help me!',
+            'Yes, this is Dog?!',
+        ],
+        bot_cmd_help_add=[
+            '*Send pictures and videos for {blog_name}*',
+            '*{blog_name} needs your pictures and videos*',
+        ],
+        bot_cmd_start=[
+            '*Welcome!*',
+            '*Well hello there!*',
+        ],
+        bot_cmd_start_add=[
+            'See some crazy stuff here',
+            'Get fresh updates from here',
+        ],
+        bot_err_change='*ERROR* could not edit file info',
+        bot_err_change_add=[
+            'Could there someone look into it?',
+            'Someone should really fix that!',
+        ],
+        bot_err_large='*ERROR* file is too large',
+        bot_err_large_add=[
+            'The telegram api won\'t deliver..',
+            'Try two half-length versions instead :)',
+        ],
+        bot_err_post='*ERROR* could not post',
+        bot_err_post_add=[
+            'Something is somewhere broken',
+            'Kopfweh!',
+            'Sorry!',
+        ],
+        bot_err_quota='*ERROR* no quota left',
+        bot_err_quota_add=[
+            'You feed me too much, I am sick.',
+            'You remember that mail server?',
+        ],
+        bot_err_upload='*ERROR* could not upload file',
+        bot_err_upload_add=[
+            'I am so sorry.',
+            'I feel miserable.',
+        ],
+        bot_trg_intro=[
+            'Erfolg!',
+            'I see what you did there!',
+            'Nice!',
+            'Ok!',
+            'Success!',
+            'Very nice!',
+            'Well done!',
+        ],
+        bot_trg_wait=[
+            'Be patient, will be published soon..',
+            'Just wait till it gets published..',
+            'Will be published soon!',
+        ]
     )
