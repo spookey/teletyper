@@ -1,5 +1,8 @@
+from collections import namedtuple
+from json import dumps
 from logging import getLogger
-from os import makedirs, path
+from os import makedirs, path, remove, walk
+from shutil import rmtree
 
 from yaml import dump, load
 
@@ -40,13 +43,23 @@ def ensured_parent_folder(*location):
     return location
 
 
+def destroy_location(*location):
+    location = join_location(*location)
+    LOG.warning('deleting location "%s"', location)
+    if check_location(location, folder=True):
+        return rmtree(location)
+    return remove(location)
+
+
 def read_yaml(*location, fallback=None):
     location = join_location(*location)
     if not check_location(location, folder=False):
-        LOG.info('no such yaml "%s" return fallback "%s"', location, fallback)
+        LOG.warning(
+            'no such yaml "%s" return fallback "%s"', location, fallback
+        )
         return fallback
     with open(location, 'r') as handle:
-        LOG.debug('reading yaml "%s"', location)
+        LOG.info('reading yaml "%s"', location)
         content = load(handle)
         if content is not None:
             return content
@@ -58,9 +71,39 @@ def read_yaml(*location, fallback=None):
 def write_yaml(*location, content):
     location = ensured_parent_folder(*location)
     with open(location, 'w') as handle:
-        LOG.debug('writing yaml "%s"', location)
+        LOG.info('writing yaml "%s"', location)
         return dump(
             content, stream=handle,
             allow_unicode=True, canonical=False, default_flow_style=False,
             explicit_end=False, explicit_start=False, indent=4
         )
+
+
+def write_json(*location, content):
+    location = ensured_parent_folder(*location)
+    with open(location, 'w') as handle:
+        LOG.info('writing json "%s"', location)
+        return handle.write(dumps(content, indent=2, sort_keys=True))
+
+
+def walk_location(*location):
+    location = join_location(*location)
+    element = namedtuple('path', ('full', 'base', 'inner', 'name', 'is_file'))
+
+    def result(directory, name, is_file):
+        full = join_location(directory, name)
+        return element(
+            base=location,
+            full=full,
+            inner=full.partition(location)[-1].lstrip('/'),
+            is_file=is_file,
+            name=name,
+        )
+
+    if check_location(location, folder=True):
+        LOG.info('walking tree "%s"', location)
+        for directory, folders, files in walk(location):
+            for file_name in files:
+                yield result(directory, file_name, True)
+            for folder_name in folders:
+                yield result(directory, folder_name, False)

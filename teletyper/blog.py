@@ -65,3 +65,10 @@ class Blog(object):
         return self.client.posts(
             self.info['name'], id=post['id']
         ).get('posts', [None])[0]
+
+    def pull_photos(self):
+        for offset in range(0, self.info['total_posts'], 20):
+            for post in self.client.posts(
+                    self.info['name'], type='photo', offset=offset, limit=20
+            )['posts']:
+                yield post

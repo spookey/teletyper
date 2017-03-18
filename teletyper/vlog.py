@@ -58,3 +58,10 @@ class Vlog(object):
             self.log.error('video tag error "%s"', res.json())
             return
         return video
+
+    def pull_videos(self):
+        for offset in range(1, self.get('me', 'videos').get('total', 1), 25):
+            for post in self.get(
+                    'me', 'videos', data=dict(page=offset)
+            )['data']:
+                yield post

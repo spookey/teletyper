@@ -1,3 +1,7 @@
 *.pyc
 *.yaml
 logs/*.log*
+pull/*.json
+pull/*/*jpg
+pull/*/*m4v
+pull/.youtube_dl*

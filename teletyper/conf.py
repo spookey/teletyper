@@ -1,7 +1,7 @@
 from logging import getLogger
 
 from teletyper.lib import APP_NAME
-from teletyper.lib.disk import read_yaml, write_yaml
+from teletyper.lib.disk import base_location, read_yaml, write_yaml
 
 
 class Conf(object):
@@ -43,6 +43,7 @@ class Conf(object):
     config_default = dict(
         post_tags=[APP_NAME],
         post_title_fmt='%Y_%m_%d-%H_%M_%S',
+        pull_folder=base_location('pull'),
         telegram_token='',
         telegram_trusted_ids=[],
         tumblr_blog_name='',
