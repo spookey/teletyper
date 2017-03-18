@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+  <title>${APP_NAME}</title>
+  <style type="text/css">
+body { background-color: #000; color: #fff; }
+img { max-height: 100%; max-width: 100%; }
+a { color: #fff; }
+.show { display: flex; align-items: center; justify-content: center; height: 98vh; width: 98vw; }
+.info { position: absolute; left: 1vh; bottom: 1vw; }
+  </style>
+</head>
+<body>
+  <div class="show" id="tell"></div>
+  <div class="info" id="text"></div>
+</body>
+<script type="text/javascript">
+window.onload = function() {
+  function smooth(elem) {
+    elem.style.opacity = 0;
+    (function fade() {
+      var val = parseFloat(elem.style.opacity);
+      if ((val += 0.1) <= 1) {
+        elem.style.opacity = val;
+        requestAnimationFrame(fade);
+      }
+    })();
+  }
+
+  function photo(elem) {
+    var text = document.getElementById('text');
+    var tell = document.getElementById('tell');
+
+    var img = document.createElement('img');
+    var caption = document.createElement('div');
+    var tags = document.createElement('div');
+    var date = document.createElement('div');
+    var href = document.createElement('a');
+
+    img.src = 'photos/' + elem.file;
+    caption.innerHTML = elem.text;
+    tags.innerHTML = elem.tags
+    href.innerHTML = elem.time
+    href.href = elem.href;
+
+    while (tell.hasChildNodes()) { tell.removeChild(tell.lastChild); }
+    while (text.hasChildNodes()) { text.removeChild(text.lastChild); }
+    console.log(elem.file);
+
+    tell.appendChild(img);
+    text.appendChild(caption);
+    text.appendChild(tags);
+    text.appendChild(href);
+    smooth(tell);
+    smooth(text);
+  }
+
+  function fetch(location, callback) {
+    var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+      if (request.readyState === 4) {
+        if (request.status === 200) {
+          callback(JSON.parse(request.responseText));
+        }
+      }
+    };
+    request.open('GET', location);
+    request.send();
+  }
+
+  fetch('files.json', function(data) {
+    var len = data.photos.length, pos = len;
+    while (pos--) {
+      setTimeout(function() {
+        photo(data.photos[Math.floor(Math.random() * len)]);
+      }, pos * ${DELAY});
+    }
+    setTimeout(function() { window.location.reload(true); }, len * ${DELAY});
+  });
+
+};
+</script>
+</html>

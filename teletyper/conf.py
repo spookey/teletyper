@@ -44,6 +44,7 @@ class Conf(object):
         post_tags=[APP_NAME],
         post_title_fmt='%Y_%m_%d-%H_%M_%S',
         pull_folder=base_location('pull'),
+        show_delay=10 * 1000,
         telegram_token='',
         telegram_trusted_ids=[],
         tumblr_blog_name='',

@@ -51,6 +51,22 @@ def destroy_location(*location):
     return remove(location)
 
 
+def read_file(*location, fallback=None):
+    location = join_location(*location)
+    if not check_location(location, folder=False):
+        LOG.warning(
+            'no such file "%s" return fallback "%s"', location, fallback
+        )
+        return fallback
+    with open(location, 'r') as handle:
+        LOG.info('reading file "%s"', location)
+        content = handle.read()
+        if content is not None:
+            return content
+    LOG.warning('file empty "%s" return fallback "%s"', location, fallback)
+    return fallback
+
+
 def read_yaml(*location, fallback=None):
     location = join_location(*location)
     if not check_location(location, folder=False):
@@ -68,6 +84,19 @@ def read_yaml(*location, fallback=None):
     return fallback
 
 
+def write_file(*location, content):
+    location = ensured_parent_folder(*location)
+    with open(location, 'w') as handle:
+        LOG.info('writing file "%s"', location)
+        return handle.write(content)
+
+
+def write_json(*location, content):
+    return write_file(*location, content=dumps(
+        content, indent=2, sort_keys=True
+    ))
+
+
 def write_yaml(*location, content):
     location = ensured_parent_folder(*location)
     with open(location, 'w') as handle:
@@ -77,13 +106,6 @@ def write_yaml(*location, content):
             allow_unicode=True, canonical=False, default_flow_style=False,
             explicit_end=False, explicit_start=False, indent=4
         )
-
-
-def write_json(*location, content):
-    location = ensured_parent_folder(*location)
-    with open(location, 'w') as handle:
-        LOG.info('writing json "%s"', location)
-        return handle.write(dumps(content, indent=2, sort_keys=True))
 
 
 def walk_location(*location):
