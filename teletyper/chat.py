@@ -57,7 +57,7 @@ class Chat(object):
         return update.message.chat.id in self.conf.telegram_trusted_ids
 
     def tags(self, update):
-        res = [self.conf.app_name]
+        res = self.conf.post_tags
         if update.message.chat.type == 'group':
             res.append(update.message.chat.title.lower())
         return res

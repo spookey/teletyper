@@ -41,7 +41,7 @@ class Conf(object):
 
     empty = ([], '')
     config_default = dict(
-        app_name=APP_NAME,
+        post_tags=[APP_NAME],
         post_title_fmt='%Y_%m_%d-%H_%M_%S',
         telegram_token='',
         telegram_trusted_ids=[],

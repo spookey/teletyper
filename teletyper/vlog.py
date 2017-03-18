@@ -15,18 +15,20 @@ class Vlog(object):
             secret=self.conf.vimeo_client_secret
         )
 
-    @property
-    def info(self):
-        self.log.debug('request vlog info')
-        req = self.client.get('/me')
+    def get(self, *uri, **param):
+        url = '/{}'.format('/'.join(uri).lstrip('/'))
+        self.log.debug('request vlog info "%s"', url)
+        req = self.client.get(url, **param)
         res = req.json()
         if req.status_code != 200:
             self.log.warning('vlog info error response "%s"', res)
-            return {}
+            return
         return res
 
     def quota(self, size):
-        return self.info['upload_quota']['space']['free'] > size
+        info = self.get('me')
+        if info:
+            return info['upload_quota']['space']['free'] > size
 
     def upload(self, source):
         res = self.client.post('/me/videos', data=dict(
